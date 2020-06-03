@@ -30,14 +30,11 @@ CHIP PC {
 	Or(a=ch,b=reset,out=chng);
 	
 	//Provides logic for whether to increment output, and 16-bit zero
-	Not16(in=regOut,out=notReg);
-	And16(a=regOut,b=notReg,out=zero);
 	Inc16(in=regOut,out=incReg);
-	Mux16(a=zero,b=incReg,sel=doInc,out=incr);
+	Mux16(a=false,b=incReg,sel=doInc,out=incr);
 
 	//Provides logic for whether to load input
-	Not16(in=in,out=notIn);
-	Mux16(a=zero,b=in,sel=load,out=loadIn);
+	Mux16(a=false,b=in,sel=load,out=loadIn);
 
 	//Combines inc and load logic and unites w/ reset
 	And16(a=loadIn,b=incr,out=incAndLd);

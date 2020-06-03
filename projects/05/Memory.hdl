@@ -29,20 +29,16 @@ CHIP Memory {
     PARTS:
     // Put your code here:
 
-	//Logic for later
-	DMux(in=load,sel=address[14],a=lR,b=nR);
-	Not(in=address[13],out=nK);
-	And(a=nR,b=nK,out=lS);
-
-	DMux(in=load,sel=address[14],a=lR,b=nR);
+	//Logic for load flag
+	DMux4Way(in=load,sel=address[13..14],a=lR1,b=lR2,c=lS,d=lK);
+	Or(a=lR1,b=lR2,out=lR);
 
 	//Load RAM if high bit not set
 	RAM16K(in=in,load=lR,address=address[0..13],out=ramOut);
 
-	//Load Screen if right bits are set/unset
-	Screen(in=in,load=lS,address=address[0..12],out=scrnOut);
+	Screen(in=in,load=lS, address=address[0..12],out=scrnOut);
 	Keyboard(out=keyOut);
 
 	//Compose Memory output
-	Mux4Way16(a=ramOut,b=ramOut,c=keyOut,d=keyOut,sel=address[13..14],out=out);
+	Mux4Way16(a=ramOut,b=ramOut,c=scrnOut,d=keyOut,sel=address[13..14],out=out);
 }
