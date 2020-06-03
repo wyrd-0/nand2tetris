@@ -1,0 +1,49 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/03/a/PC.hdl
+
+/**
+ * A 16-bit counter with load and reset control bits.
+ * if      (reset[t] == 1) out[t+1] = 0
+ * else if (load[t] == 1)  out[t+1] = in[t]
+ * else if (inc[t] == 1)   out[t+1] = out[t] + 1  (integer addition)
+ * else                    out[t+1] = out[t]
+ */
+
+CHIP PC {
+    IN in[16],load,inc,reset;
+    OUT out[16];
+
+    PARTS:
+    // Put your code here:
+	Not(in=load,out=notLoad);
+	Not(in=reset,out=notReset);
+
+	//flag logic
+	And(a=load,b=notReset,out=doLoad);
+	And(a=notLoad,b=notReset,out=nLdRst);
+	And(a=inc,b=nLdRst,out=doInc);
+
+	//flag to signal change in output
+	Or(a=inc,b=load,out=ch);
+	Or(a=ch,b=reset,out=chng);
+	
+	//Provides logic for whether to increment output, and 16-bit zero
+	Not16(in=regOut,out=notReg);
+	And16(a=regOut,b=notReg,out=zero);
+	Inc16(in=regOut,out=incReg);
+	Mux16(a=zero,b=incReg,sel=doInc,out=incr);
+
+	//Provides logic for whether to load input
+	Not16(in=in,out=notIn);
+	Mux16(a=zero,b=in,sel=load,out=loadIn);
+
+	//Combines inc and load logic and unites w/ reset
+	And16(a=loadIn,b=incr,out=incAndLd);
+	Or16(a=loadIn,b=incr,out=incOrLd);
+	Mux16(a=incOrLd,b=incAndLd,sel=reset,out=regIn);
+
+	//if all flags false, no load
+	Register(in=regIn,load=chng,out=regOut,out=out);
+}
