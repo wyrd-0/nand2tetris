@@ -2,21 +2,106 @@
 
 import sys
 
-insns = '''(PUSH)	//Expects ARG to contain value to push
+push = '''(PUSH)	//Expects ARG to contain value to push
 @ARG
 D=M
 @SP
 M=M+1
-A=M
-M=D
-(POP)
-@SP
-A=M
-D=M		//D==value at addr in SP
-@ARG
-A=M		//deref. addr in ARG
+A=M-1
 M=D
 '''
+pop = '''(POP)		//Stores output in D
+@SP
+AM=M-1		//decrement TOS, set RAM addr to old TOS
+D=M
+'''
+
+add = '''(ADD)
+@SP
+AMD=M-1		//M,D==new top of stack
+D=M				//D==value at old TOS
+A=A-1			//A==new TOS
+M=M+D			//value at new TOS += value at old TOS
+'''
+
+sub = '''(SUB)
+@SP
+AMD=M-1
+D=M
+A=A-1
+M=M-D
+'''
+
+neg = '''(NEG)
+@SP
+A=M
+M=-M
+'''
+
+tf_jmp = '''(TF_JMP)
+@SP
+A=M-1
+M=0
+@exit
+0;JMP
+(true)
+@SP
+A=M-1
+M=1
+(exit)
+'''
+
+eq = '''(EQNE)
+@SP
+AM=M-1
+D=M
+A=A-1
+D=M-D
+@true
+D;JEQ
+''' + tf_jmp
+
+gt = '''(GT)
+@SP
+AM=M-1
+D=M
+A=A-1
+D=M-D
+@true
+D;JGT
+''' + tf_jmp
+
+lt = '''(LT)
+@SP
+AM=M-1
+D=M
+A=A-1
+D=M-D
+@true
+D;JLT
+''' + tf_jmp
+
+conj = '''(AND)
+@SP
+AMD=M-1
+A=A-1
+M=D&M
+'''
+
+disj = '''(OR)
+@SP
+AMD=M-1
+A=A-1
+M=D|M
+'''
+
+bitnot = '''(NOT)
+@SP
+A=M-1
+D=M
+@true
+D;JEQ
+''' + tf_jmp
 
 ASM = []
 filename = sys.argv[1]
@@ -33,15 +118,12 @@ for l in vm:
 	args = l.split(' ')
 	arg1 = args[0]
 	addr = ''
-	deref = '\nD=M'+'\n@'+index+'\nA=D+A'
-	dec_stack = '@SP\nD=M\nM=M-1\nA=D\nD=M\nA=A-1'
-	inc_stack = '@SP\nD=M\nM=M+1\nA=D\nD=M\nA=A-1'
 
 	if 'add' is arg1:
-		cmd = '@SP\nD=M\nM=M-1\nA=D\nD=M\nA=A-1\nM=D+M'
+		cmd = add
 
 	if 'sub' is arg1:
-		cmd = '@SP\nD=M\nM=M-1\nA=D\nD=M\nA=A-1\nM=M-D'
+		cmd = sub 
 
 	if 'neg' is arg1:
 		cmd = '@SP\nA=M\nM=-M'
