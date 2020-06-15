@@ -1,159 +1,121 @@
 #!/usr/bin/python3
 
+import asm_ops
 import sys
+import re
 
-push = '''(PUSH)	//Expects ARG to contain value to push
-@ARG
-D=M
-@SP
-M=M+1
-A=M-1
-M=D
-'''
-pop = '''(POP)		//Stores output in D
-@SP
-AM=M-1		//decrement TOS, set RAM addr to old TOS
-D=M
-'''
-
-add = '''(ADD)
-@SP
-AMD=M-1		//M,D==new top of stack
-D=M				//D==value at old TOS
-A=A-1			//A==new TOS
-M=M+D			//value at new TOS += value at old TOS
-'''
-
-sub = '''(SUB)
-@SP
-AMD=M-1
-D=M
-A=A-1
-M=M-D
-'''
-
-neg = '''(NEG)
-@SP
-A=M
-M=-M
-'''
-
-tf_jmp = '''(TF_JMP)
-@SP
-A=M-1
-M=0
-@exit
-0;JMP
-(true)
-@SP
-A=M-1
-M=1
-(exit)
-'''
-
-eq = '''(EQNE)
-@SP
-AM=M-1
-D=M
-A=A-1
-D=M-D
-@true
-D;JEQ
-''' + tf_jmp
-
-gt = '''(GT)
-@SP
-AM=M-1
-D=M
-A=A-1
-D=M-D
-@true
-D;JGT
-''' + tf_jmp
-
-lt = '''(LT)
-@SP
-AM=M-1
-D=M
-A=A-1
-D=M-D
-@true
-D;JLT
-''' + tf_jmp
-
-conj = '''(AND)
-@SP
-AMD=M-1
-A=A-1
-M=D&M
-'''
-
-disj = '''(OR)
-@SP
-AMD=M-1
-A=A-1
-M=D|M
-'''
-
-bitnot = '''(NOT)
-@SP
-A=M-1
-D=M
-@true
-D;JEQ
-''' + tf_jmp
-
-ASM = []
+VMC = []
 filename = sys.argv[1]
 f = open(filename)
+vmc = f.readlines()
 STATIC = filename.split('.vm')[0]
 
+#remove comments
+CMNT='//'
+for i in range(len(vmc)):
+  l = vmc[i]
+  l = l.split(CMNT, 1)[0]
+  vmc[i] = l
+
+#remove empty lines
+vmc = list(filter(lambda x:not re.match(r'^\s*$', x), vmc))
+
+
 C_ARITH = ['add','sub','neg','eq','gt','lt','and','or','not']
+ARG_TABLE = {'local':'@LCL','argument':'@ARG','this':'@THIS','that':'@THAT'}
 C_PUSH = 'push'
 C_POP = 'pop'
+deref = '''
+A=M
+D=M
+'''
 
-vm = f.readlines()
+links=[]
+i=0
 
-for l in vm:
-	args = l.split(' ')
+for l in vmc:
+	args = l.split()
 	arg1 = args[0]
+	cmd = ''
 	addr = ''
+	c = 'COMP'+str(i)
+	ret_head = '@'+c +'\nD=A\n@R13\nM=D\n'
+	ret_tail = '('+c+')\n'
 
-	if 'add' is arg1:
-		cmd = add
+	if 'add' == arg1:
+		cmd = asm_ops.add
 
-	if 'sub' is arg1:
-		cmd = sub 
+	if 'sub' == arg1:
+		cmd = asm_ops.sub 
 
-	if 'neg' is arg1:
-		cmd = '@SP\nA=M\nM=-M'
+	if 'neg' == arg1:
+		cmd = asm_ops.neg
 
-	if not arg1 in C_ARITH:
+	if 'and' == arg1:
+		cmd = asm_ops.conj
+
+	if 'or' == arg1:
+		cmd = asm_ops.disj
+
+	if 'not' == arg1:
+		cmd = asm_ops.boolnot
+
+	if 'eq' == arg1:
+		cmd = ret_head + '@EQUAL\n0;JMP\n' + ret_tail
+		i+=1
+		if not asm_ops.eq in links:
+			links.append(asm_ops.eq)
+
+	if 'gt' == arg1:
+		cmd = ret_head + '@GREATER\n0;JMP\n' + ret_tail
+		i+=1
+		if not asm_ops.gt in links:
+			links.append(asm_ops.gt)
+
+	if 'lt' == arg1:
+		cmd = ret_head + '@LESS\n0;JMP\n' + ret_tail
+		i+=1
+		if not asm_ops.lt in links:
+			links.append(asm_ops.lt)
+
+	if arg1 not in C_ARITH:
 		arg2 = args[1]
 		index = args[2]
+		dval = '@'+str(index)+'\nD=A\n'
+		deref = '\nA=D+M\n'
 
-		if 'local' is arg2:
-			addr = '@LCL' + deref
+		if arg2 in ARG_TABLE:
+			addr = dval + ARG_TABLE[arg2] + deref
 
-		if 'arg' is arg2:
-			addr = '@ARG' + deref
+		if 'static' == arg2:
+			addr = '@' + STATIC + '.' + index+'\n'
 
-		if 'this' is arg2:
-			addr = '@THIS' + deref
+		if 'temp' == arg2:
+			addr = '@R' + str(5 + int(index))+'\n'
 
-		if 'that' is arg2:
-			addr = '@THAT' + deref
+		if 'pointer' == arg2:
+			addr = '@' + str(3 + int(index))+'\n'
 
-		if 'constant' is arg2:
-			addr = '@' + index
+		if C_PUSH == arg1:
+			if 'constant' == arg2:
+				cmd = '@'+index+'\nD=A\n' + asm_ops.push
+			else:
+				cmd = addr + 'D=M\n' + asm_ops.push
 
-		if 'static' is arg2:
-			addr = '@' + STATIC + '.' + index
+		if C_POP == arg1:
+			cmd = addr + 'D=A\n@R13\nM=D' + asm_ops.pop
 
-		if 'temp' is arg2:
-			addr = '@' + str(5 + int(index))
+	VMC.append(cmd)
 
-		if 'pointer' is arg2:
-			addr = '@' + str(3 + int(index)) + deref
+end = '(END)\n@END\n0;JMP\n'
 
+VMC.append(end)
 
+for m in links:
+	VMC.append(m)
+
+#create and write lines to .asm file
+asm_file = STATIC+'.asm'
+asm = open(asm_file,'w')
+asm.writelines(VMC)
+asm.close()
