@@ -1,173 +1,208 @@
-push = '''//PUSH -- Expects D to contain value to push
-@SP
-M=M+1
-A=M-1
-M=D
-'''
-pop = '''//POP -- Stores output in addr at R13
-@SP
-AM=M-1    //decrement TOS, set RAM addr to old TOS
-D=M
-@R13
-A=M
-M=D
-'''
+push = ('//PUSH -- Expects D to contain value to push\n'
+        '@SP\n'
+        'M=M+1\n'
+        'A=M-1\n'
+        'M=D\n')
+pop = ('//POP -- Stores output in addr at R13\n'
+       '@SP\n'
+       'AM=M-1    //decrement TOS, set RAM addr to old TOS\n'
+       'D=M\n'
+       '@R13\n'
+       'A=M\n'
+       'M=D\n')
 
-add = '''//ADD
-@SP
-AM=M-1   //M,D==new top of stack
-D=M       //D==value at old TOS
-A=A-1     //A==new TOS
-M=D+M     //value at new TOS += value at old TOS
-'''
+add = ('//ADD\n'
+       '@SP\n'
+       'AM=M-1   //M,D==new top of stack\n'
+       'D=M       //D==value at old TOS\n'
+       'A=A-1     //A==new TOS\n'
+       'M=D+M     //value at new TOS += value at old TOS\n')
 
-sub = '''//SUB
-@SP
-AM=M-1
-D=M
-A=A-1
-M=M-D
-'''
+sub = ('//SUB\n'
+       '@SP\n'
+       'AM=M-1\n'
+       'D=M\n'
+       'A=A-1\n'
+       'M=M-D\n')
 
-neg = '''//NEG -- Arithmetically negates value at TOS
-@SP
-A=M-1
-M=-M
-'''
+neg = ('//NEG -- Arithmetically negates value at TOS\n'
+       '@SP\n'
+       'A=M-1\n'
+       'M=-M\n')
 
-eq = '''(EQUAL)
-@SP
-AM=M-1
-D=M
-A=A-1
-D=M-D
-@EQ
-D;JEQ
-@SP
-A=M-1
-M=0
-@EQEX
-0;JMP
-(EQ)
-@SP
-A=M-1
-M=-1
-(EQEX)
-@R13
-A=M
-0;JMP
-'''
+eq = ('(EQUAL)\n'
+      '@SP\n'
+      'AM=M-1\n'
+      'D=M\n'
+      'A=A-1\n'
+      'D=M-D\n'
+      '@EQ\n'
+      'D;JEQ\n'
+      '@SP\n'
+      'A=M-1\n'
+      'M=0\n'
+      '@EQEX\n'
+      '0;JMP\n'
+      '(EQ)\n'
+      '@SP\n'
+      'A=M-1\n'
+      'M=-1\n'
+      '(EQEX)\n'
+      '@R13\n'
+      'A=M\n'
+      '0;JMP\n')
 
-gt = '''(GREATER)
-@SP
-AM=M-1
-D=M
-A=A-1
-D=M-D
-@GT
-D;JGT
-@SP
-A=M-1
-M=0
-@GTEX
-0;JMP
-(GT)
-@SP
-A=M-1
-M=-1
-(GTEX)
-@R13
-A=M
-0;JMP
-'''
+gt = ('(GREATER)\n'
+      '@SP\n'
+      'AM=M-1\n'
+      'D=M\n'
+      'A=A-1\n'
+      'D=M-D\n'
+      '@GT\n'
+      'D;JGT\n'
+      '@SP\n'
+      'A=M-1\n'
+      'M=0\n'
+      '@GTEX\n'
+      '0;JMP\n'
+      '(GT)\n'
+      '@SP\n'
+      'A=M-1\n'
+      'M=-1\n'
+      '(GTEX)\n'
+      '@R13\n'
+      'A=M\n'
+      '0;JMP\n')
 
-lt = '''(LESS)
-@SP
-AM=M-1
-D=M
-A=A-1
-D=M-D
-@LT
-D;JLT
-@SP
-A=M-1
-M=0
-@LTEX
-0;JMP
-(LT)
-@SP
-A=M-1
-M=-1
-(LTEX)
-@R13
-A=M
-0;JMP
-'''
+lt = ('(LESS)\n'
+      '@SP\n'
+      'AM=M-1\n'
+      'D=M\n'
+      'A=A-1\n'
+      'D=M-D\n'
+      '@LT\n'
+      'D;JLT\n'
+      '@SP\n'
+      'A=M-1\n'
+      'M=0\n'
+      '@LTEX\n'
+      '0;JMP\n'
+      '(LT)\n'
+      '@SP\n'
+      'A=M-1\n'
+      'M=-1\n'
+      '(LTEX)\n'
+      '@R13\n'
+      'A=M\n'
+      '0;JMP\n')
 
-conj = '''//AND -- Expects 1 or 0 as operands
-@SP
-AM=M-1
-D=M
-A=A-1
-M=D&M
-'''
+conj = ('//AND -- Expects 1 or 0 as operands\n'
+        '@SP\n'
+        'AM=M-1\n'
+        'D=M\n'
+        'A=A-1\n'
+        'M=D&M\n')
 
-disj = '''//OR -- Expects 1 or 0 as operands
-@SP
-AM=M-1
-D=M
-A=A-1
-M=D|M
-'''
+disj = ('//OR -- Expects 1 or 0 as operands\n'
+        '@SP\n'
+        'AM=M-1\n'
+        'D=M\n'
+        'A=A-1\n'
+        'M=D|M\n')
 
-boolnot = '''//NOT -- Expects 1 or 0 at TOS
-@SP
-A=M-1
-M=!M
-'''
+boolnot = ('//NOT -- Expects 1 or 0 at TOS\n'
+           '@SP\n'
+           'A=M-1\n'
+           'M=!M\n')
 
-save_frame = '''//A contains return address
-D=A //Saves entire frame of caller
-@SP
-M=M+1
-A=M-1
-M=D
-@LCL
-D=M
-@SP
-M=M+1
-A=M-1
-M=D
-@ARG
-D=M
-@SP
-M=M+1
-A=M-1
-M=D
-@THIS
-D=M
-@SP
-M=M+1
-A=M-1
-M=D
-@THAT
-D=M
-@SP
-M=M+1
-A=M-1
-M=D
-'''
+save_frame = ('//A contains return address\n'
+              'D=A //Saves entire frame of caller\n'
+              '@SP\n'
+              'M=M+1\n'
+              'A=M-1\n'
+              'M=D\n'
+              '@LCL\n'
+              'D=M\n'
+              '@SP\n'
+              'M=M+1\n'
+              'A=M-1\n'
+              'M=D\n'
+              '@ARG\n'
+              'D=M\n'
+              '@SP\n'
+              'M=M+1\n'
+              'A=M-1\n'
+              'M=D\n'
+              '@THIS\n'
+              'D=M\n'
+              '@SP\n'
+              'M=M+1\n'
+              'A=M-1\n'
+              'M=D\n'
+              '@THAT\n'
+              'D=M\n'
+              '@SP\n'
+              'M=M+1\n'
+              'A=M-1\n'
+              'M=D\n')
 
-arg_lcl = '''
-D=A	//Sets ARG for
-@5
-D=D+A
-@SP
-D=M-D
-@ARG
-M=D
-@SP
-D=M
-@LCL
-M=D
-'''
+arg_lcl = ('//Sets ARG and LCL for callee\n'
+           'D=A\n'
+           '@5\n'
+           'D=D+A\n'
+           '@SP\n'
+           'D=M-D\n'
+           '@ARG\n'
+           'M=D\n'
+           '@SP\n'
+           'D=M\n'
+           '@LCL\n'
+           'M=D\n')
+
+restore_caller = ('//Restores frame of caller\n'
+                  '@5\n'
+                  'D=A\n'
+                  '@LCL\n'
+                  'D=M-D\n'
+                  'A=D\n'
+                  'D=M\n'
+                  '@R13\n'
+                  'M=D // R13 holds return address\n'
+                  '@SP\n'
+                  'AM=M-1\n'
+                  'D=M\n'
+                  '@ARG\n'
+                  'A=M\n'
+                  'M=D\n'
+                  'D=A\n'
+                  '@SP\n'
+                  'M=D+1\n'
+                  '@LCL\n'
+                  'A=M-1\n'
+                  'D=M\n'
+                  '@THAT\n'
+                  'M=D\n'
+                  '@2\n'
+                  'D=A\n'
+                  '@LCL\n'
+                  'A=M-D\n'
+                  'D=M\n'
+                  '@THIS\n'
+                  'M=D\n'
+                  '@3\n'
+                  'D=A\n'
+                  '@LCL\n'
+                  'A=M-D\n'
+                  'D=M\n'
+                  '@ARG\n'
+                  'M=D\n'
+                  '@4\n'
+                  'D=A\n'
+                  '@LCL\n'
+                  'A=M-D\n'
+                  'D=M\n'
+                  '@LCL\n'
+                  "M=D\n"
+                  '@R13\n'
+                  'A=M\n'
+                  '0;JMP\n')
